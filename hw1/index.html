@@ -81,7 +81,7 @@ sampling was interesting as well!
 <h3 align="middle">Part 2: Antialiasing triangles</h3>
 
 <p>
-  We ended up breaking the for loop for x and y of the bounding box into smaller pieces. For example, with a sampling rate of 4, we took steps of 1/2 and checked if our x + 0.5 was inside the triangle, and if so, then we filled the pixel at x + 1, since our sample_buffer now has size width*height*sample_rate. Overall, we took steps of size 1/sqrt(sample_rate) for both x and y, and filled the pixel at x + delta * sqrt(sample_rate), where delta is the 1/sqrt(sample_rate) steps. Essentially, we were taking the fractional approach to supersampling, where we would break each pixel down into sample_rate parts, and then take the middle of these fractional coordinates to test if the point is in the triangle, and then turn the fractional coordinates into the mapping of where they are in the enlarged sample buffer in order to fill it with the proper color. The only tweak/addition we made to the data structures was just making the sample buffer bigger by a factor of sample_rate. Supersampling is useful because it allows for the outline of objects and the changes in color to be not as harsh, and reduces jaggies. By sampling smaller portions of the image, we can allow for a more gradual transition between two colors/lines. Modifications that we made to the rasterization pipeline in the process include resizing to the enlarged sample buffer size, as well as editing resolve_to_framebuffer by downsampling the supersampled buffer and averaging each pixel’s sample_rate number of colors and assigning that to the frame buffer’s original pixel that belonged to the width*height size of a buffer. Before, the triangles had stair step like patterns on the edges, but after supersampling, and with the increase in rate, the edges became more blurred and faded out, with a gradual lightening of the triangles colors as it mixes with the white background.
+We ended up breaking the for loop for x and y of the bounding box into smaller pieces. For example, with a sampling rate of 4, we took steps of 1/2 and checked if our current spot + 0.25 was inside the triangle (to get the center of the square), and if so, then we filled the pixel at this spot, since our sample_buffer now has size width*height*sample_rate. To calculate the index to insert the color in our sample_buffer, we did (y*sqrt(sample_rate) + ydelta) * width * sqrt(sample_rate) + (x* sqrt(sample_rate) + xdelta). xdelta/ydelta were the current values in our loop, looping as long as they were less than or equal to sqrt(sample_rate). x and y were the actual location of the pixel before supersampling. Essentially, we were taking the fractional approach to supersampling, where we would break each pixel down into sample_rate parts, and then take the middle of these fractional coordinates to test if the point is in the triangle, and then turn the fractional coordinates into the mapping of where they are in the enlarged sample buffer in order to fill it with the proper color. The only tweak/addition we made to the data structures was just making the sample buffer bigger by a factor of sample_rate. Supersampling is useful because it allows for the outline of objects and the changes in color to be not as harsh, and reduces jaggies. By sampling smaller portions of the image, we can allow for a more gradual transition between two colors/lines. Modifications that we made to the rasterization pipeline in the process include resizing to the enlarged sample buffer size, as well as editing resolve_to_framebuffer by downsampling the supersampled buffer and averaging each pixel’s sample_rate number of colors and assigning that to the frame buffer’s original pixel that belonged to the width*height size of a buffer. Before, the triangles had stair step like patterns on the edges, but after supersampling, and with the increase in rate, the edges became more blurred and faded out, with a gradual lightening of the triangles colors as it mixes with the white background.
 </p>
 
 <div align="middle">
@@ -143,18 +143,16 @@ Our updated version of Cubeman. His left arm is raised up, and his right arm is 
   <table style="width=100%">
     <tr>
       <td>
+        <img src="images/bary.png" align="middle" width="400px"/>
+        <figcaption align="middle">We use barycentric coordinates to slowly blend out colors from each of the triangle’s vertices, use the alpha, beta, gamma that we get from relating a point x,y in the triangle to adjust the addition of proportions of the colors from each vertex.</figcaption>
+      </td>
+      <td>
         <img src="images/task4_basic_test7.png" align="middle" width="400px"/>
         <figcaption align="middle">basic/test7.svg with default viewing parameters. </figcaption>
       </td>
     </tr>
   </table>
 </div>
-
-<br>
-
-<p>
-In the above image, we use barycentric coordinates to slowly blend out colors from each of the triangle’s vertices, use the alpha, beta, gamma that we get from relating a point x,y in the triangle to adjust the addition of proportions of the colors from each vertex. 
-</p>
 
 
 <h3 align="middle">Part 5: "Pixel sampling" for texture mapping</h3>
