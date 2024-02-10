@@ -161,6 +161,33 @@ Our updated version of Cubeman. His left arm is raised up, and his right arm is 
 Pixel sampling is basically seeing which pixel a sample point (u,v) belongs to or is closest to. In texture mapping, we are given a texture we want to place on an object, and at each coordinate of the object, we need to determine where on the texture map we want to sample from. In other words, what does the point on this object correspond to in the texture space? We implemented nearest pixel sampling, which will round to the nearest whole u,v coordinate after scaling by the mipmap width and height, and also added a clamp between 0 and mipmap width - 1 or mipmap height -1 to make sure the coordinates map to an appropriate place on the mipmap. We also implemented bilinear sampling, which will take into account the sample colors on all 4 surrounding pixels of the sample point (u,v) and then use linear interpolation to create a mixed color.
 </p>
 
+<br>
+
+<p>
+Here's an example where nearest pixel sampling beats bilinear sampling. The image of the campanile on the right is a lot more blended.
+</p>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/camp_nearest.png" align="middle" width="400px"/>
+        <figcaption align="middle">Campanile, nearest pixel sampling.</figcaption>
+      </td>
+      <td>
+        <img src="images/camp_bilinear.png" align="middle" width="400px"/>
+        <figcaption align="middle">Campanile, bilinear sampling.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<br>
+
+<p>
+Here are some photos of the Berkeley seal with different sampling techniques and sample rates.
+</p>
+
 <div align="middle">
   <table style="width=100%">
     <tr>
