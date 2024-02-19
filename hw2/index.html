@@ -53,7 +53,7 @@
 	part, which was mesh upsampling. We couldn’t use the same tactics we used to upsample
 	2D images to upsample our mesh, as our mesh was much more complex. Therefore, we 
 	did 4-1 subdivision (which meant every original triangle got divided into 4 smaller 
-	triangles) to upsample. I thought it was cool how we introduced the idea of HalfEdges 
+	triangles) to upsample. We thought it was fascinating how we introduced the idea of HalfEdges 
 	to easily traverse through triangle meshes. It would be much more costly to loop through
 	a list of triangles, especially for meshes that have millions of them. 
 </p>
@@ -185,13 +185,13 @@
 <br>
 
 <p>
-	Our "eventful" debugging journey involved staring at our diagram, and realizing we assigned one of the vertices of a haldedge incorrectly in our code. The diagram was a reallt useful tool, and definitely saved us hours more of debugging!
+	Our "eventful" debugging journey involved staring at our diagram, and realizing we assigned one of the vertices of a halfedge incorrectly in our code. The diagram was a reallt useful tool, and definitely saved us hours more of debugging!
 </p>
 
 <h3 align="middle">Part 5: Edge Split</h3>
 
 <p>
-	Our strategy for implementing edge split was very similar to our strategy for implementing edge flip! We drew out a diagram of a diamond like structure and labeled all the mesh elements, and we did a before and after to see what attributes needed to change. Unlike edge flip, edge split required adding new mesh elements, so we made sure to account for this in our diagram/code as well. It turned out we needed to add new vertices, halfedges, edges, and faces. 
+	Our strategy for implementing edge split was very similar to our strategy for implementing edge flip! We drew out a diagram of a diamond like structure and labeled all the mesh elements, and we did a before and after to see what attributes needed to change. Unlike edge flip, edge split required adding new mesh elements, so we made sure to account for this in our diagram/code as well. Splitting an edge requires adding 6 new halfedges, 3 new edges, 2 new faces, and 1 new vertex.
 </p>
 
 <br>
@@ -256,7 +256,7 @@ In general, meshes become a lot smoother after loop subdivision, as loop subdivi
 </div>
 
 <p> 
-	We seem to be able to reduce this effect by pre-splitting some of the edges. This seems to be because we add more vertices overall on the face, which will allow sharp edges to stay preserved in the subdivision process, instead of getting averaged out.
+	We seem to be able to reduce this effect by pre-splitting some of the edges. This seems to be because we add more vertices overall on the face, which will allow sharp edges to stay preserved in the subdivision process, instead of getting averaged out. The technique we used for choosing which edges to split were just to split the 5 edges touching the outermost vertex, and we continued doing this in a circular pattern. It didn't necessarily seem like we had to do it this way, but this seemed like a procedural way to increase the number of vertices on a face. 
 </p>
 
 <br>
@@ -298,7 +298,7 @@ Below are some examples using dae/cube.dae where we must split some edges to red
     <tr>
       <td>
         <img src="images/task6_3.jpg" align="middle" width="400px"/>
-        <figcaption align="middle">dae/cube.dae, except we split each edge running across all 6 faces.</figcaption>
+        <figcaption align="middle">dae/cube.dae, except we split each edge running across all 6 faces to form an "X" pattern across each face.</figcaption>
       </td>
       <td>
         <img src="images/task6_4.jpg" align="middle" width="400px"/>
