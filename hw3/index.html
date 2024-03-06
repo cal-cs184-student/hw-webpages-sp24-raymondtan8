@@ -1,7 +1,128 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Homework 3 index.html here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184/284A Rasterizer</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184/284A: Computer Graphics and Imaging, Spring 2024</h1>
+<h1 align="middle">Homework 3: Pathtracer</h1>
+<h2 align="middle">Dana Feng, Raymond Tan</h2>
+<h2 align="middle">Website link: https://cal-cs184-student.github.io/hw-webpages-sp24-raymondtan8/hw3/index.html</h2>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/bunny.png" align="middle" width="700px" height="250px"/>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<br>
+
+<div>
+
+<h2 align="middle">Overview</h2>
+<p>
+	This homework was very interesting! We started the assignment off by implementing 
+	Bezier curves + surfaces, which allowed us to render smoother structures. Next, we 
+	worked with triangle meshes, which involved using the concept of HalfEdges heavily. 
+	We started by calculating the area-weighted vertex normals at vertices of our mesh. 
+	This helped make the shading of the model smoother. Next, we implemented the edge 
+	flip and edge split functions, which became really useful when implementing the last 
+	part, which was mesh upsampling. We couldn’t use the same tactics we used to upsample
+	2D images to upsample our mesh, as our mesh was much more complex. Therefore, we 
+	did 4-1 subdivision (which meant every original triangle got divided into 4 smaller 
+	triangles) to upsample. We thought it was fascinating how we introduced the idea of HalfEdges 
+	to easily traverse through triangle meshes. It would be much more costly to loop through
+	a list of triangles, especially for meshes that have millions of them. 
+</p>
+
+<h2 align="middle">Part 1: Ray Generation and Scene Intersection</h2>
+
+<p>
+	De Casteljau's algorithm is a method for evaluating Bezier curves (and surfaces) iteratively. It provides a way to calculate points on the curve or surface without directly using the polynomial equation. We used the equation defined in the spec which involved linear interpolation from points i and i + 1 to go from n  control points to n - 1 intermediate control points, all the way until we got down to a single point. This final point lies on the bezier curve with parameter t. 
+</p>
+<p>
+	Below are some examples working with Bezier curves.
+</p>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/task1_1.jpg" align="middle" width="400px"/>
+        <figcaption align="middle">Starting off with the original 6 control points.</figcaption>
+      </td>
+	  <td>
+        <img src="images/task1_2.jpg" align="middle" width="400px"/>
+        <figcaption align="middle" >Going from 6 control points to 5 intermediate control points.</figcaption>
+      </td>
+    </tr>
+	<tr>
+		<td>
+		  <img src="images/task1_3.jpg" align="middle" width="400px"/>
+		  <figcaption align="middle">Going from 5 control points to 4 intermediate control points.</figcaption>
+		</td>
+		<td>
+		  <img src="images/task1_4.jpg" align="middle" width="400px"/>
+		  <figcaption align="middle">Going from 4 control points to 3 intermediate control points.</figcaption>
+		</td>
+	</tr>
+	<tr>
+		<td>
+		  <img src="images/task1_5.jpg" align="middle" width="400px"/>
+		  <figcaption align="middle">Going from 3 control points to 2 intermediate control points.</figcaption>
+		</td>
+		<td>
+		  <img src="images/task1_6.jpg" align="middle" width="400px"/>
+		  <figcaption align="middle">Going from 2 control points to 1 final point. This point lies on the Bezier curve with parameter t.</figcaption>
+		</td>
+	</tr>
+	<tr>
+		<td>
+		  <img src="images/task1_7.jpg" align="middle" width="400px"/>
+		  <figcaption align="middle">Toggling the Bezier curve. We see the final red point lies on this curve.</figcaption>
+		</td>
+		<td>
+		  <img src="images/task1_8.jpg" align="middle" width="400px"/>
+		  <figcaption align="middle">We can alter the original control points and toggle the parameter t to get a different curve.</figcaption>
+		</td>
+	</tr>
+  </table>
+</div>
+
+
+<h2 align="middle">Part 2: Bounding Volume Hierarchy</h2>
+
+<h2 align="middle">Part 3: Direct Illumination</h2>
+
+<h2 align="middle">Part 4: Global Illumination</h2>
+
+<h2 align="middle">Part 5: Adaptive Sampling</h2>
+
+<h2 align="middle">Reflections on Group Work</h2>
+
+
+</body>
 </html>
