@@ -32,7 +32,7 @@
   <table style="width=100%">
     <tr>
       <td>
-        <img src="images/bunny.png" align="middle" width="700px" height="250px"/>
+        <img src="images/bunny.png" align="middle" width="750px" height="250px"/>
       </td>
     </tr>
   </table>
@@ -44,84 +44,426 @@
 
 <h2 align="middle">Overview</h2>
 <p>
-	This homework was very interesting! We started the assignment off by implementing 
-	Bezier curves + surfaces, which allowed us to render smoother structures. Next, we 
-	worked with triangle meshes, which involved using the concept of HalfEdges heavily. 
-	We started by calculating the area-weighted vertex normals at vertices of our mesh. 
-	This helped make the shading of the model smoother. Next, we implemented the edge 
-	flip and edge split functions, which became really useful when implementing the last 
-	part, which was mesh upsampling. We couldn’t use the same tactics we used to upsample
-	2D images to upsample our mesh, as our mesh was much more complex. Therefore, we 
-	did 4-1 subdivision (which meant every original triangle got divided into 4 smaller 
-	triangles) to upsample. We thought it was fascinating how we introduced the idea of HalfEdges 
-	to easily traverse through triangle meshes. It would be much more costly to loop through
-	a list of triangles, especially for meshes that have millions of them. 
+	This homework was very interesting! This homework really revealed how ray tracing in general works; 
+	the lectures are a bit too high level and fast for us, but getting into the weeds and actually 
+	implementing the algorithms really helped us understand how and why we do ray tracing. In part 1, 
+	we implemented camera ray generation, taking pixel samples, and calculating ray intersections with 
+	both triangles and spheres. It was confusing at first to understand what was in object view and what 
+	was in world view, and it was tedious to try to calculate the intersections. We ended up using the 
+	lecture slides and discussions a lot to help with understanding and those calculations though! In part 
+	2, we implemented the bounding volume hierarchy data structure, and intersection of the bounding boxes/the 
+	bounding volume hierarchy. We also used the pseudocode in lecture to help, and decided to split on the 
+	longest axis. The intersection portion was also a bit tricky as well, but the helper methods we had in 
+	part 1 helped us implement at a higher level. Then, in part 3 we looked into direct illumination with 
+	the implementation of the diffuse BSDF function, zero bounce illumination, and one bounce illumination. 
+	This by far took the longest, and the lecture slides as well as the assignment spec were really helpful. 
+	We ended up just looping through each of the samples and checking if there was an intersection and adding 
+	that intersection to the total lighting. Then, in part 4 we extended upon part 3 and implemented up to N 
+	bounces of light as well as russian roulette recursion. It was tricky to incorporate accumulated vs non 
+	accumulated light, but after accounting for all the edge cases such as if m =1 and also normalizing and 
+	scaling according to the spec, we were finally able to implement it successfully. Finally, we added 
+	adaptive sampling to allow for a higher number of pixels while still staying reasonable in terms of 
+	compute time and energy. This was pretty straightforward, as we just followed the algorithm detailed 
+	in the spec.
 </p>
 
 <h2 align="middle">Part 1: Ray Generation and Scene Intersection</h2>
 
 <p>
-	De Casteljau's algorithm is a method for evaluating Bezier curves (and surfaces) iteratively. It provides a way to calculate points on the curve or surface without directly using the polynomial equation. We used the equation defined in the spec which involved linear interpolation from points i and i + 1 to go from n  control points to n - 1 intermediate control points, all the way until we got down to a single point. This final point lies on the bezier curve with parameter t. 
+	In terms of ray generation, we first translated hFov and vFov into radians, and then transformed the x and y coordinates given to be in a space where (0,0) is the center instead of (0.5, 0.5), and multiplied x and y by 2*tan(0.5*hFov) and 2*tan(0.5*vFov) respectively to get the coordinates in camera space (since the camera space spans from -tan(0.5*hFov) to tan(0.5*hFov) and we previously shifted the origin by 0.5 and similarly for the y coordinate). Then, using the c2w matrix, we shifted the camera space coordinates to world view, and made sure to set the ray’s min_t and max_t to nClip and fClip. Once the ray is generated from that image coordinate through the camera, we went on to sample num_samples camera rays and traced them through the scene, estimating their radiance and summing them up to update the pixel at x,y with that radiance integral. Finally, we implemented the ray triangle and ray sphere intersection via the algorithm introduced in discussion 5 and in lecture on ray tracing and acceleration structures respectively.
 </p>
 <p>
-	Below are some examples working with Bezier curves.
+	The triangle intersection algorithm was implemented with the following procedure: First, we defined a function to return t or the time along the ray that the intersection occurs, as well as the barycentric coordinates of alpha, beta, and gamma. The way we calculated this was by defining a ray with origin o and direction d as o+td, and then representing a point within the triangle as p = alpha*p0 + beta*p1 + gamma *p2. Then, we set the ray equation equal to the point, and solved for the unknowns with the M ̈oller-Trumbore algorithm! Then, if the t is within range of the ray’s min_t and max_t and the alpha, beta, and gammas are all within the range of 0 to 1, then we returned that there was an intersection, and we calculated the actual intersection by storing t as t in the intersection struct, as well as the normal vector by using barycentric interpolation with the alpha, beta, gamma, and set the max_t of the ray to t, as the ray now stops at this triangle. We also assigned the intersection object’s primitive to the triangle itself, as well as used the get_bsdf function.
 </p>
 
 <div align="middle">
   <table style="width=100%">
     <tr>
       <td>
-        <img src="images/task1_1.jpg" align="middle" width="400px"/>
-        <figcaption align="middle">Starting off with the original 6 control points.</figcaption>
+        <img src="images/part1_1.png" align="middle" width="400px"/>
+        <figcaption align="middle">Rendering dae/sky/CBSpheres_lambertian, which has 14 primitives.</figcaption>
       </td>
 	  <td>
-        <img src="images/task1_2.jpg" align="middle" width="400px"/>
-        <figcaption align="middle" >Going from 6 control points to 5 intermediate control points.</figcaption>
+        <img src="images/part1_2.png" align="middle" width="400px"/>
+        <figcaption align="middle">Rendering dae/sky/CBgems.dae, which has 252 primitives.</figcaption>
       </td>
     </tr>
-	<tr>
-		<td>
-		  <img src="images/task1_3.jpg" align="middle" width="400px"/>
-		  <figcaption align="middle">Going from 5 control points to 4 intermediate control points.</figcaption>
-		</td>
-		<td>
-		  <img src="images/task1_4.jpg" align="middle" width="400px"/>
-		  <figcaption align="middle">Going from 4 control points to 3 intermediate control points.</figcaption>
-		</td>
-	</tr>
-	<tr>
-		<td>
-		  <img src="images/task1_5.jpg" align="middle" width="400px"/>
-		  <figcaption align="middle">Going from 3 control points to 2 intermediate control points.</figcaption>
-		</td>
-		<td>
-		  <img src="images/task1_6.jpg" align="middle" width="400px"/>
-		  <figcaption align="middle">Going from 2 control points to 1 final point. This point lies on the Bezier curve with parameter t.</figcaption>
-		</td>
-	</tr>
-	<tr>
-		<td>
-		  <img src="images/task1_7.jpg" align="middle" width="400px"/>
-		  <figcaption align="middle">Toggling the Bezier curve. We see the final red point lies on this curve.</figcaption>
-		</td>
-		<td>
-		  <img src="images/task1_8.jpg" align="middle" width="400px"/>
-		  <figcaption align="middle">We can alter the original control points and toggle the parameter t to get a different curve.</figcaption>
-		</td>
-	</tr>
   </table>
 </div>
 
 
 <h2 align="middle">Part 2: Bounding Volume Hierarchy</h2>
 
+<p>
+	For our BVH construction algorithm, we first create one large bounding box incorporating the whole image, and then we find the length of each axis of the bounding box, and split along the longest axis, sorting primitives in the bounding box along the longest axis and splitting right in the middle. We also checked if the start is equal to middle or if the end is equal to middle, and if so, then we just moved the middle split point one over to prevent having nothing on one side. Then, we recursively constructed the BVH for each side of the split.
+</p>
+
+<p>
+	With BVH acceleration, we can now render images that would have taken too long without this optimization.</p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/part2_1.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/CBDragon, which has 100,012 primitives.</figcaption>
+		</td>
+		<td>
+		  <img src="images/part2_2.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/CBLucy.dae, which has 133,796 primitives.</figcaption>
+		</td>
+	  </tr>
+	</table>
+</div>
+
+<p>
+	When comparing the rendering times with and without BVH acceleration, a big difference can be observed in terms of performance. Here are a few examples:
+</p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/part2_3.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/CBBunny.dae, which has 28,588 primitives.</figcaption>
+		</td>
+		<td>
+		  <img src="images/part2_chart1.jpg" align="middle" width="400px"/>
+		</td>
+	  </tr>
+	</table>
+</div>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/part2_4.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/CBcoil.dae, which has 7,884 primitives.</figcaption>
+		</td>
+		<td>
+		  <img src="images/part2_chart2.jpg" align="middle" width="400px"/>
+		</td>
+	  </tr>
+	</table>
+</div>
+
+<p>
+	As demonstrated above, BVH acceleration makes rendering images much more efficient. We see that there is a slight increase in the time needed to generate the BVH with BVH acceleration, but the difference is basically neglibile. We saw the biggest improvement in speedup times of rendering the image -- for example, rendering CBBunny.dae without BVH acceleration took around 192 seconds, while with BVH acceleration, took around 0.15 seconds. BVH acceleration allows us to be more efficient with the number of interesection tests we perform for each ray. Using the example of CBBunny.dae again, we had to intersect test the total number of primitives, since we weren't building a BVH ahead of time. This was reduced to about 12.8 intersections tests per ray with the optimization. 
+</p>
+
 <h2 align="middle">Part 3: Direct Illumination</h2>
+
+<p>
+	For direct lighting with uniform hemisphere sampling, we looped through the number of samples, generating one sample per iteration and creating a new ray with that sample’s direction and checking if there is an intersection with that new ray. If there was, we got the emission for that object, and then added it to the total lighting after multiplying it by the f function, 2pi, and cos theta to calculate the light from the reflection of the object. Finally, we returned the lighting scaled by 1/number of samples. For direct lighting by importance sampling lights, we looped through the scene lights, and if the light was a point light source, we just took 1 sample, otherwise we took ns_area_light samples and only added the light’s light reflection if it was not blocked by an object and was not behind the hit point by checking for the cos_theta value and seeing if it was above or equal to 0. At each light we scaled the sum of lights by the number of samples that we took.
+</p>
+
+<p>
+	Here's a comparison of using the two implementations of direct lighting on the same image:
+</p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/part3_1.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/CBSpheres_lambertian.dae with uniform hemisphere sampling. </figcaption>
+		</td>
+		<td>
+		  <img src="images/part3_2.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/CBSpheres_lambertian.dae with importance sampling.</figcaption>
+		</td>
+	  </tr>
+	</table>
+</div>
+
+<p>
+	The following set of images is a sequence rendering the same image, dae/sky/CBSpheres_lambertian.dae. We render the image with 1, 4, 16, and 64 light rays and with 1 sample per pixel, using direct lighting importance sampling.
+</p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/part3_3.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering with 1 sample per area light.</figcaption>
+		</td>
+		<td>
+		  <img src="images/part3_4.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering with 4 samples per area light.</figcaption>
+		</td>
+	  </tr>
+	  <tr>
+		<td>
+		  <img src="images/part3_5.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering with 16 samples per area light.</figcaption>
+		</td>
+		<td>
+		  <img src="images/part3_6.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering with 64 samples per area light.</figcaption>
+		</td>
+	  </tr>
+	</table>
+</div>
+
+<p>
+	Observing on what we have seen above, we see that the noise levels steadily decrease as we increase the number of samples per area light. The specks corresponding to the noise become closer together and become less granular/large.
+</p>
+
+<p>
+	Comparing and contrasting uniform hemisphere sampling and lighting sampling: Uniform hemisphere sampling is much more noisy than lighting sampling, while lighting sampling is pretty smooth, with gradual color changes. Because lighting sampling specifically alters the sampling method to only sample from lights’ directions, the computational cost is a lot larger than just uniformly sampling from the hemisphere. Uniform hemisphere sampling treats all directions equally, and thus the directions that we sample from might contribute very little light and do not alter the appearance of the objects much, so then the image appears noisy. This could be reduced by sampling more samples per pixel.
+</p>
 
 <h2 align="middle">Part 4: Global Illumination</h2>
 
+<p>
+	For our indirect lighting function, we split it into two cases: if we are accumulating bounces, vs if we are not accumulating bounces. In the case that we were, we checked if the current ray depth was 0 and if the max ray depth was 0, and if so we just returned the zero bounce radiance. Then, we set L_out to be the one bounce radiance value, and then with coin flip probability (since we have russian roulette), if the ray depth was greater than 1, we sampled a new direction and checked if it intersected with anything. If so, then we recursively called our function and then added the result of that recursive call scaled by the bsdf, cos theta, and the pdf. Finally, if we were at the max depth we also added the zero bounce radiance. If we were not accumulating bounces, then we just returned either zero bounce radiance or one bounce radiance if the depth was 0 or 1, and then we only returned the last bounce’s light scaled by the sample bsdf, cos theta, and the pdf again.
+</p>
+
+<p>
+	Here are a few images rendered with both direct and indirect illumination:
+</p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/part4_1.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/CBSpheres_lambertian.dae with uniform hemisphere sampling. </figcaption>
+		</td>
+		<td>
+		  <img src="images/part4_2.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/CBSpheres_lambertian.dae with importance sampling.</figcaption>
+		</td>
+	  </tr>
+	</table>
+</div>
+
+<p>
+	Next, let's take a look at an image where we only look at the direct illumination (the light source + the first bounce), and the same image rendered where we now only look at indirect illumination (the second bounce onwards):
+</p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/part4_3.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/CBSpheres_lambertian.dae with direct illumination only.</figcaption>
+		</td>
+		<td>
+		  <img src="images/part4_4.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/CBSpheres_lambertian.dae with indirect illumination only.</figcaption>
+		</td>
+	  </tr>
+	</table>
+</div>
+
+<p>
+	Next, let's analyze what happens when we render the same image but keep increasing the max ray depth, as well as setting the flag isAccumBounces equal to False (which means we only want the light at depth m, and nothing accumulated from the previous steps). We'll run this experiment on dae/sky/CBBunny.dae, and go from m = 0 to m = 5, where m represents the max ray depth.
+</p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/part4_5.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Max ray depth of 0, isAccumBounces = false</figcaption>
+		</td>
+		<td>
+		  <img src="images/part4_6.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Max ray depth of 1, isAccumBounces = false</figcaption>
+		</td>
+	  </tr>
+	  <tr>
+		<td>
+		  <img src="images/part4_7.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Max ray depth of 2, isAccumBounces = false</figcaption>
+		</td>
+		<td>
+		  <img src="images/part4_8.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Max ray depth of 3, isAccumBounces = false</figcaption>
+		</td>
+	  </tr>
+	  <tr>
+		<td>
+		  <img src="images/part4_9.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Max ray depth of 4, isAccumBounces = false</figcaption>
+		</td>
+		<td>
+		  <img src="images/part4_10.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Max ray depth of 5, isAccumBounces = false</figcaption>
+		</td>
+	  </tr>
+	</table>
+</div>
+
+<p>
+	Let's do the same thing, except this time setting isAccumBounces equal to true.
+</p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/part4_11.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Max ray depth of 0, isAccumBounces = true</figcaption>
+		</td>
+		<td>
+		  <img src="images/part4_12.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Max ray depth of 1, isAccumBounces = true</figcaption>
+		</td>
+	  </tr>
+	  <tr>
+		<td>
+		  <img src="images/part4_13.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Max ray depth of 2, isAccumBounces = true</figcaption>
+		</td>
+		<td>
+		  <img src="images/part4_14.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Max ray depth of 3, isAccumBounces = true</figcaption>
+		</td>
+	  </tr>
+	  <tr>
+		<td>
+		  <img src="images/part4_15.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Max ray depth of 4, isAccumBounces = true</figcaption>
+		</td>
+		<td>
+		  <img src="images/part4_16.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Max ray depth of 5, isAccumBounces = true</figcaption>
+		</td>
+	  </tr>
+	</table>
+</div>
+
+<p>
+	Moving on, let's take a look at rendering the same dae/sky/CBBunny.dae image, but with Russian Roulette turned on. We'll set m = 0, 1, 2, 3, 4, and 100. We expect the image rendered with m = 100 and m = 4 to not be too different visually, as well as computationally, as the russian roulette will likely terminate our ray tracing long before we reach a depth of 100.
+</p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/part4_17.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering with max ray depth = 0, and russian roulette turned on.</figcaption>
+		</td>
+		<td>
+		  <img src="images/part4_18.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering with max ray depth = 1, and russian roulette turned on.</figcaption>
+		</td>
+	  </tr>
+	  <tr>
+		<td>
+		  <img src="images/part4_19.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering with max ray depth = 2, and russian roulette turned on.</figcaption>
+		</td>
+		<td>
+		  <img src="images/part4_20.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering with max ray depth = 3, and russian roulette turned on.</figcaption>
+		</td>
+	  </tr>
+	  <tr>
+		<td>
+		  <img src="images/part4_21.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering with max ray depth = 4, and russian roulette turned on.</figcaption>
+		</td>
+		<td>
+		  <img src="images/part4_22.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering with max ray depth = 100, and russian roulette turned on.</figcaption>
+		</td>
+	  </tr>
+	</table>
+</div>
+
+<p>
+	Let's now take a look at how different sample rates per pixel can affect the quality of an image. Each image will be rendered with 4 samples per area light.
+</p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/part4_23.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/CBBunny.dae, sampling once per pixel.</figcaption>
+		</td>
+		<td>
+		  <img src="images/part4_24.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/CBBunny.dae, sampling twice per pixel.</figcaption>
+		</td>
+	  </tr>
+	  <tr>
+		<td>
+		  <img src="images/part4_25.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/CBBunny.dae, sampling 4 times per pixel.</figcaption>
+		</td>
+		<td>
+		  <img src="images/part4_26.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/CBBunny.dae, sampling 8 times per pixel.</figcaption>
+		</td>
+	  </tr>
+	  <tr>
+		<td>
+		  <img src="images/part4_27.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/CBBunny.dae, sampling 16 times per pixel.</figcaption>
+		</td>
+		<td>
+		  <img src="images/part4_28.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/CBBunny.dae, sampling 64 times per pixel.</figcaption>
+		</td>
+	  </tr>
+	  <tr>
+		<td>
+		  <img src="images/part4_29.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/CBBunny.dae, sampling 1024 times per pixel.</figcaption>
+		</td>
+	  </tr>
+	</table>
+</div>
+
 <h2 align="middle">Part 5: Adaptive Sampling</h2>
 
+<p>
+	Adaptive sampling allows us to sample at different rates in different areas of an image. It allows us to avoid the problem of increasing too many samples per pixel and making the whole process faster by choosing which pixels we increase samples for. In our implementation, we check for if a pixel has converged every samplesPerBatch, and if it has (via the rule that if 1.96*(std/sqrt(n)) is less than or equal to maxTolerance*mu, then the pixel has converged, where the std or standard deviation and mu or mean are taken from the value of the samples at each pixel and n is the number of the pixels. If the pixel has converged we stop sampling/increasing the number of samples and we just update the pixel with the summed radiance.
+</p>
+
+<p>
+	Let's now render images at high sampling rates, and include the sample rate image as well. We'll render the images with 2048 samples per pixel, 1 sample per light, and setting max ray bounces to 5.
+</p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/part5_1.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/blob.</figcaption>
+		</td>
+		<td>
+		  <img src="images/part5_2.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Sample rate image of dae/sky/blob.</figcaption>
+		</td>
+	  </tr>
+	  <tr>
+		<td>
+		  <img src="images/part5_3.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Rendering dae/sky/wall-e.dae.</figcaption>
+		</td>
+		<td>
+		  <img src="images/part5_4.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Sample rate image of dae/sky/wall-e.dae.</figcaption>
+		</td>
+	  </tr>
+	</table>
+</div>
+
+<p>
+	In the above images, red represents high sampling rates, while blue represents low sampling rates. We see that the areas of the scene with more complex geometries are red, since they take longer to converge.
+</p>
+
 <h2 align="middle">Reflections on Group Work</h2>
+
+<p>
+	The collaboration between the partners in this group went very well! We worked together in-person a lot to keep each other on track, and when we worked asynchronously, we divided up the work pretty evenly. We both learned a lot in this homework – the favorite thing that we learned is how many bounces of light occur in any given image, and how detailed we can make an image just by increasing the number of bounces of light that occur (for example, the difference between an image rendered with m = 2, versus m = 20). However, the quality increase drops off exponentially in terms of the number of light bounces, which is why we implement strategies such as Russian Roulette to prevent us from going down too long of a path.
+</p>
 
 
 </body>
