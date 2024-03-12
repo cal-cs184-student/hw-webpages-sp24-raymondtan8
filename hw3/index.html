@@ -95,7 +95,7 @@
 <h2 align="middle">Part 2: Bounding Volume Hierarchy</h2>
 
 <p>
-	For our BVH construction algorithm, we first create one large bounding box incorporating the whole image, and then we find the length of each axis of the bounding box, and split along the longest axis, sorting primitives in the bounding box along the longest axis and splitting right in the middle. We also checked if the start is equal to middle or if the end is equal to middle, and if so, then we just moved the middle split point one over to prevent having nothing on one side. Then, we recursively constructed the BVH for each side of the split.
+	For our BVH construction algorithm, we first create one large bounding box incorporating the whole image, and then we find the length of each axis of the bounding box, and split along the longest axis, sorting primitives in the bounding box along the longest axis and splitting right in the middle. The reason why we chose this heuristic of using the longest axis is so that our splits would be the most efficient, as they would be dividing up our primitives evenly, and preventing an uneven division of primitives between the axis. We also checked if the start is equal to middle or if the end is equal to middle, and if so, then we just moved the middle split point one over to prevent having nothing on one side. Then, we recursively constructed the BVH for each side of the split.
 </p>
 
 <p>
@@ -207,7 +207,7 @@
 </div>
 
 <p>
-	Observing on what we have seen above, we see that the noise levels steadily decrease as we increase the number of samples per area light. The specks corresponding to the noise become closer together and become less granular/large.
+	Observing on what we have seen above, we see that the noise levels steadily decrease as we increase the number of samples per area light. The specks corresponding to the noise become closer together and become less granular/large. This principle makes sense -- as we increase the number of samples, we reduce the amount of noise, since we're getting closer and closer to the true value. There is a tradeoff however, which is that taking more samples is more computationally expensive.
 </p>
 
 <p>
